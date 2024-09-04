@@ -41,4 +41,13 @@ export class IdeasService {
   async findOne(id: string): Promise<Idea | null> {
     return this.ideaModel.findById(id).exec();
   }
+
+  async remove(id: string): Promise<Idea> {
+    const deletedIdea = await this.ideaModel.findByIdAndDelete(id).exec();
+    if (!deletedIdea) {
+      throw new NotFoundException(`Idea with ID "${id}" not found`);
+    }
+    this.eventEmitter.emit('idea.deleted', id);
+    return deletedIdea;
+  }
 }

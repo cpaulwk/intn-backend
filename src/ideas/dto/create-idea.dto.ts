@@ -1,9 +1,12 @@
-import { IsString, IsNotEmpty, IsDateString, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsDateString, IsNumber, Min } from 'class-validator';
 
 export class CreateIdeaDto {
   @IsString()
   @IsNotEmpty()
-  readonly content: string;
+  readonly title: string;
+
+  @IsString()
+  readonly description: string = ''; // Default to empty string
 
   @IsString()
   @IsNotEmpty()
@@ -12,4 +15,9 @@ export class CreateIdeaDto {
   @IsDateString()
   @IsOptional()
   readonly submissionDate?: Date;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  readonly upvotes?: number;
 }

@@ -24,7 +24,7 @@ export class IdeasGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @OnEvent('idea.created')
   handleIdeaCreated(payload: any) {
-    this.server.emit('newIdea', payload);
+    this.server.emit('ideaCreated', payload);
   }
 
   @OnEvent('idea.upvoted')

@@ -5,6 +5,7 @@ import { IdeasController } from './ideas.controller';
 import { IdeasService } from './ideas.service';
 import { IdeasGateway } from './ideas.gateway';
 import { Idea, IdeaSchema } from './schemas/idea.schema';
+import { OpenAIService } from '../openai/openai.service';
 
 @Module({
   imports: [
@@ -12,6 +13,6 @@ import { Idea, IdeaSchema } from './schemas/idea.schema';
     EventEmitterModule.forRoot()
   ],
   controllers: [IdeasController],
-  providers: [IdeasService, IdeasGateway],
+  providers: [IdeasService, IdeasGateway, OpenAIService],
 })
 export class IdeasModule {}

@@ -8,8 +8,12 @@ export class IdeasController {
   constructor(private readonly ideasService: IdeasService) {}
 
   @Post()
-  create(@Body() createIdeaDto: CreateIdeaDto): Promise<Idea> {
-    return this.ideasService.create(createIdeaDto);
+  async create(@Body() createIdeaDto: CreateIdeaDto): Promise<Idea> {
+    if (createIdeaDto.description) {
+      return this.ideasService.create(createIdeaDto);
+    } else {
+      return this.ideasService.createIdea(createIdeaDto);
+    }
   }
 
   @Get()

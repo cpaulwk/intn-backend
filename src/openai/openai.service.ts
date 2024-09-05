@@ -26,7 +26,6 @@ export class OpenAIService {
       });
 
       if (completion.choices && completion.choices[0] && completion.choices[0].message) {
-        console.log("completion.choices[0].message.content", completion.choices[0].message.content)
         const content = JSON.parse(completion.choices[0].message.content || '{}');
         return {
           title: content.title || 'No enhanced title available',

@@ -21,6 +21,21 @@ export class IdeasService {
     return savedIdea;
   }
 
+  async createIdea(createIdeaDto: CreateIdeaDto): Promise<Idea> {
+    try {
+      const { title, description } = await this.openAIService.enhanceIdea(createIdeaDto.title);
+      const newIdea = await this.create({
+        ...createIdeaDto,
+        title,
+        description
+      });
+      return newIdea;
+    } catch (error) {
+      console.error('Error creating idea:', error);
+      throw new Error('Failed to create enhanced idea');
+    }
+  }
+
   async findAll(): Promise<Idea[]> {
     return this.ideaModel.find().exec();
   }
@@ -53,17 +68,4 @@ export class IdeasService {
     return deletedIdea;
   }
 
-  async createIdea(createIdeaDto: CreateIdeaDto): Promise<Idea> {
-    console.log("createIdeaDto", createIdeaDto);
-    const enhancedDescription = await this.openAIService.enhanceIdea(createIdeaDto.title);
-    console.log("enhancedDescription", enhancedDescription);
-    const newIdea = await this.create({
-      ...createIdeaDto,
-      title: enhancedDescription.title,
-      description: enhancedDescription.description
-    });
-
-    this.eventEmitter.emit('idea.created', newIdea);
-    return newIdea;
-  }
 }

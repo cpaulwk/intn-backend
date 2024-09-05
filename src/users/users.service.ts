@@ -2,34 +2,32 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
-import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const createdUser = new this.userModel(createUserDto);
-    return createdUser.save();
+  async upvoteIdea(userId: string, ideaId: string) {
+    const user = await this.userModel.findById(userId);
+    if (user && !user.upvotedIdeas.includes(ideaId)) {
+      user.upvotedIdeas.push(ideaId);
+      await user.save();
+    }
+    return user;
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userModel.find().exec();
+  // You can add more user-related methods here, such as:
+  
+  async findUserById(userId: string): Promise<User | null> {
+    return this.userModel.findById(userId).exec();
   }
 
-  async findOne(id: string): Promise<User> {
-    return this.userModel.findById(id).exec();
+  async findUserByEmail(email: string): Promise<User | null> {
+    return this.userModel.findOne({ email }).exec();
   }
 
-  async update(id: string, updateUserDto: Partial<CreateUserDto>): Promise<User> {
-    return this.userModel.findByIdAndUpdate(id, updateUserDto, { new: true }).exec();
-  }
-
-  async remove(id: string): Promise<User> {
-    return this.userModel.findByIdAndDelete(id).exec();
-  }
-
-  findByName(name: string) {
-    return this.userModel.findOne({ name }).exec();
+  async createUser(userData: Partial<User>): Promise<User> {
+    const newUser = new this.userModel(userData);
+    return newUser.save();
   }
 }

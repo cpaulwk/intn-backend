@@ -5,6 +5,10 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { UsersModule } from './users/users.module';
 import { IdeasModule } from './ideas/ideas.module';
+import { GoogleStrategy } from './auth/google.strategy';
+import { JwtModule } from '@nestjs/jwt';
+import { JwtStrategy } from './auth/jwt.strategy';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -12,8 +16,13 @@ import { IdeasModule } from './ideas/ideas.module';
     EventEmitterModule.forRoot(),
     UsersModule,
     IdeasModule,
+    AuthModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET,
+      signOptions: { expiresIn: '1h' },
+    }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, GoogleStrategy, JwtStrategy],
 })
 export class AppModule {}

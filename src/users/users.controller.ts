@@ -1,28 +1,17 @@
-import { Controller, Post, Body, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private usersService: UsersService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Post('upvote-idea')
+  @UseGuards(AuthGuard('jwt'))
+  async upvoteIdea(@Req() req, @Body('ideaId') ideaId: string) {
+    const userId = req.user.id;
+    return this.usersService.upvoteIdea(userId, ideaId);
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
-  }
-
-  @Get('search')
-  findByName(@Query('name') name: string) {
-    return this.usersService.findByName(name);
-  }
-
-  @Post('search')
-  searchByName(@Body('name') name: string) {
-    return this.usersService.findByName(name);
-  }
+  // You can add more user-related endpoints here
 }

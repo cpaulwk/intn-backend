@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class UsersService {
@@ -9,10 +10,11 @@ export class UsersService {
 
   async upvoteIdea(userId: string, ideaId: string) {
     const user = await this.userModel.findById(userId);
-    if (user && !user.upvotedIdeas.includes(ideaId)) {
-      user.upvotedIdeas.push(ideaId);
-      await user.save();
-    }
+    const objectIdIdeaId = new Types.ObjectId(ideaId);
+    // if (user && !user.upvotedIdeas.includes(objectIdIdeaId)) {
+    //   user.upvotedIdeas.push(objectIdIdeaId);
+    //   await user.save();
+    // }
     return user;
   }
 

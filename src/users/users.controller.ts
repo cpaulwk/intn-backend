@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, UseGuards, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
 
@@ -6,12 +6,18 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  @Post('upvote-idea')
+  @Get('upvoted-ideas')
   @UseGuards(AuthGuard('jwt'))
-  async upvoteIdea(@Req() req, @Body('ideaId') ideaId: string) {
+  async getUpvotedIdeas(@Req() req) {
     const userId = req.user.id;
-    return this.usersService.upvoteIdea(userId, ideaId);
+    return this.usersService.getUpvotedIdeas(userId);
   }
 
-  // You can add more user-related endpoints here
+  @Post('toggle-upvote')
+  @UseGuards(AuthGuard('jwt'))
+  async toggleUpvote(@Req() req, @Body('ideaId') ideaId: string) {
+    const userId = req.user.id;
+    const updatedUser = await this.usersService.toggleUpvote(userId, ideaId);
+    return { upvotedIdeas: updatedUser.upvotedIdeas };
+  }
 }

@@ -12,8 +12,8 @@ export class User extends Document {
   @Prop()
   lastName: string;
 
-  // @Prop({ type: [{ type: Types.ObjectId, ref: 'Idea' }] })
-  // upvotedIdeas: Types.ObjectId[];
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Idea' }] })
+  upvotedIdeas: Types.ObjectId[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

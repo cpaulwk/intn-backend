@@ -5,7 +5,8 @@ import { OnEvent } from '@nestjs/event-emitter';
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
   },
 })
 export class IdeasGateway implements OnGatewayConnection, OnGatewayDisconnect {

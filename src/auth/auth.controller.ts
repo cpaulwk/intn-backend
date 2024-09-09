@@ -25,7 +25,6 @@ export class AuthController {
   @Get('redirect')
   @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
-    console.log("req.user: ", req.user);
     const { access_token } = await this.authService.googleLogin(req.user);
     
     // Set the token as an HTTP-only cookie

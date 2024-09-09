@@ -3,22 +3,44 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
 import { Types } from 'mongoose';
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
-  async upvoteIdea(userId: string, ideaId: string) {
+  async getUpvotedIdeas(userId: string): Promise<string[]> {
     const user = await this.userModel.findById(userId);
+    return user?.upvotedIdeas.map(id => id.toString()) || [];
+  }
+
+  async toggleUpvote(userId: string, ideaId: string) {
     const objectIdIdeaId = new Types.ObjectId(ideaId);
-    // if (user && !user.upvotedIdeas.includes(objectIdIdeaId)) {
-    //   user.upvotedIdeas.push(objectIdIdeaId);
-    //   await user.save();
-    // }
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID "${userId}" not found`);
+    }
+  
+    const ideaIndex = user.upvotedIdeas.findIndex(id => id.equals(objectIdIdeaId));
+    if (ideaIndex === -1) {
+      user.upvotedIdeas.push(objectIdIdeaId);
+    } else {
+      user.upvotedIdeas.splice(ideaIndex, 1);
+    }
+  
+    await user.save();
     return user;
   }
 
-  // You can add more user-related methods here, such as:
+  async removeUpvote(userId: string, ideaId: string) {
+    const user = await this.userModel.findById(userId);
+    const objectIdIdeaId = new Types.ObjectId(ideaId);
+    if (user) {
+      user.upvotedIdeas = user.upvotedIdeas.filter(id => !id.equals(objectIdIdeaId));
+      await user.save();
+    }
+    return user;
+  }
   
   async findUserById(userId: string): Promise<User | null> {
     return this.userModel.findById(userId).exec();

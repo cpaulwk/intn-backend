@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Put, Param, NotFoundException, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, NotFoundException, Delete, UseGuards, Req } from '@nestjs/common';
 import { IdeasService } from './ideas.service';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { Idea } from './schemas/idea.schema';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('ideas')
 export class IdeasController {
@@ -30,10 +31,12 @@ export class IdeasController {
     return idea;
   }
 
-  @Put(':id/upvote')
-  async upvote(@Param('id') id: string): Promise<Idea> {
+  @Put(':id/toggle-upvote')
+  @UseGuards(AuthGuard('jwt'))
+  async toggleUpvote(@Param('id') id: string, @Req() req): Promise<Idea> {
     try {
-      return await this.ideasService.upvote(id);
+      const userId = req.user.id;
+      return await this.ideasService.toggleUpvote(id, userId);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException(error.message);

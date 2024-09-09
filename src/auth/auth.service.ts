@@ -4,7 +4,6 @@ import { JwtService } from '@nestjs/jwt';
 import { Model } from 'mongoose';
 import { User } from '../users/schemas/user.schema';
 
-@Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,

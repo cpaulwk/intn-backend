@@ -1,17 +1,26 @@
-import { Controller, Get, UseGuards, Req, Res } from '@nestjs/common';
+import { Controller, Get, UseGuards, Req, Res, Post, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
+import { JwtService } from '@nestjs/jwt';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { User } from '../users/schemas/user.schema';
 
+@Injectable()
 @Controller('auth/google')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly jwtService: JwtService,
+    @InjectModel(User.name) private userModel: Model<User>
+  ) {}
 
   @Get()
   @UseGuards(AuthGuard('google'))
   async googleAuth(@Req() req) {
-  	return;
-   }
+    return;
+  }
 
   @Get('redirect')
   @UseGuards(AuthGuard('google'))
@@ -29,5 +38,25 @@ export class AuthController {
 
     // Redirect to the root URL
     res.redirect(`${process.env.FRONTEND_URL}`);
+  }
+
+  @Get('check')
+  async checkAuthStatus(@Req() req) {
+    if (req.cookies['auth_token']) {
+      try {
+        const decoded = this.jwtService.verify(req.cookies['auth_token']);
+        const user = await this.userModel.findById(decoded.sub).select('-password');
+        return { isAuthenticated: true, user };
+      } catch (error) {
+        return { isAuthenticated: false, user: null };
+      }
+    }
+    return { isAuthenticated: false, user: null };
+  }
+
+  @Post('logout')
+  async logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('auth_token');
+    return { message: 'Logged out successfully' };
   }
 }

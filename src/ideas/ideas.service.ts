@@ -6,7 +6,7 @@ import { CreateIdeaDto } from './dto/create-idea.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OpenAIService } from '../openai/openai.service';
 import { User } from '../users/schemas/user.schema';
-import { Types } from 'mongoose';
+import { toggleUpvote } from '../utils/upvoteUtils';
 
 @Injectable()
 export class IdeasService {
@@ -30,7 +30,9 @@ export class IdeasService {
       const newIdea = await this.create({
         ...createIdeaDto,
         title,
-        description
+        description,
+        submissionDate: new Date(),
+        upvotes: 0
       });
       return newIdea;
     } catch (error) {
@@ -44,34 +46,7 @@ export class IdeasService {
   }
 
   async toggleUpvote(id: string, userId: string): Promise<Idea> {
-    const idea = await this.ideaModel.findById(id).exec();
-    if (!idea) {
-      throw new NotFoundException(`Idea with ID "${id}" not found`);
-    }
-
-    const user = await this.userModel.findById(userId);
-    if (!user) {
-      throw new NotFoundException(`User with ID "${userId}" not found`);
-    }
-
-    const isUpvoted = user.upvotedIdeas.includes(new Types.ObjectId(id));
-    const updateOperation = isUpvoted
-      ? { $inc: { upvotes: -1 }, $pull: { upvotedBy: userId } }
-      : { $inc: { upvotes: 1 }, $addToSet: { upvotedBy: userId } };
-
-    const updatedIdea = await this.ideaModel.findByIdAndUpdate(
-      id,
-      updateOperation,
-      { new: true }
-    ).exec();
-
-    if (isUpvoted) {
-      user.upvotedIdeas = user.upvotedIdeas.filter(ideaId => ideaId.toString() !== id);
-    } else {
-      user.upvotedIdeas.push(new Types.ObjectId(id));
-    }
-    await user.save();
-
+    const updatedIdea = await toggleUpvote(this.ideaModel, this.userModel, id, userId);
     this.eventEmitter.emit('idea.upvoteToggled', updatedIdea);
     return updatedIdea;
   }

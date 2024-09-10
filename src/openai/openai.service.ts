@@ -1,13 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import OpenAI from 'openai';
 
 @Injectable()
 export class OpenAIService {
   private openai = new OpenAI({
-    apiKey: `${process.env.OPENAI_API_KEY}`,  
-    organization: `${process.env.OPENAI_ORGANIZATION}`,
-    project: `${process.env.OPENAI_PROJECT_ID}`,
-});
+    apiKey: process.env.OPENAI_API_KEY,
+    organization: process.env.OPENAI_ORGANIZATION,
+    project: process.env.OPENAI_PROJECT_ID,
+  });
 
   async enhanceIdea(idea: string): Promise<{ title: string; description: string }> {
     try {
@@ -32,14 +32,11 @@ export class OpenAIService {
           description: content.description || 'No enhanced description available'
         };
       } else {
-        throw new Error('Unexpected response structure from OpenAI');
+        throw new InternalServerErrorException('Unexpected response structure from OpenAI');
       }
     } catch (error) {
       console.error('Error in enhanceIdea:', error);
-      return {
-        title: 'Failed to enhance title',
-        description: 'Failed to enhance description'
-      };
+      throw new InternalServerErrorException('Failed to enhance idea using OpenAI');
     }
   }
 }

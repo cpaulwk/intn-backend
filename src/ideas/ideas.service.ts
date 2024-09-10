@@ -18,7 +18,11 @@ export class IdeasService {
   ) {}
 
   async create(createIdeaDto: CreateIdeaDto): Promise<Idea> {
-    const createdIdea = new this.ideaModel(createIdeaDto);
+    const createdIdea = new this.ideaModel({
+      ...createIdeaDto,
+      submissionDate: new Date(),
+      upvotes: 0
+    });
     const savedIdea = await createdIdea.save();
     this.eventEmitter.emit('idea.created', savedIdea);
     return savedIdea;
@@ -30,9 +34,7 @@ export class IdeasService {
       const newIdea = await this.create({
         ...createIdeaDto,
         title,
-        description,
-        submissionDate: new Date(),
-        upvotes: 0
+        description
       });
       return newIdea;
     } catch (error) {

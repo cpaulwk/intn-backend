@@ -15,6 +15,9 @@ export class Idea {
 
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] })
   upvotedBy: string[];
+
+  @Prop({ required: true })
+  username: string;
 }
 
 export const IdeaSchema = SchemaFactory.createForClass(Idea);

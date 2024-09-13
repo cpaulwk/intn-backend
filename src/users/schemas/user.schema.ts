@@ -12,6 +12,9 @@ export class User extends Document {
   @Prop()
   lastName: string;
 
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Idea' }], default: [] })
+  viewedIdeas: Types.ObjectId[];
+
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Idea' }] })
   upvotedIdeas: Types.ObjectId[];
 }

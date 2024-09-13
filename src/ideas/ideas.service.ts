@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Idea } from './schemas/idea.schema';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -64,6 +64,21 @@ export class IdeasService {
     }
     this.eventEmitter.emit('idea.deleted', id);
     return deletedIdea;
+  }
+
+  async addViewedIdea(userId: string, ideaId: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(
+      userId,
+      {
+        $addToSet: { viewedIdeas: ideaId },
+      },
+      { new: true }
+    );
+  }
+
+  async getViewedIdeas(userId: string): Promise<Idea[]> {
+    const user = await this.userModel.findById(userId).exec();
+    return this.ideaModel.find({ _id: { $in: user.viewedIdeas } }).limit(5).exec();
   }
 
 }

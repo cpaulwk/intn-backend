@@ -54,4 +54,19 @@ export class UsersService {
     const newUser = new this.userModel(userData);
     return newUser.save();
   }
+
+  async addViewedIdea(userId: string, ideaId: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(
+      userId,
+      {
+        $addToSet: { viewedIdeas: new Types.ObjectId(ideaId) },
+      },
+      { new: true }
+    );
+  }
+
+  async getViewedIdeas(userId: string): Promise<Types.ObjectId[]> {
+    const user = await this.userModel.findById(userId).exec();
+    return user.viewedIdeas.slice(0, 5);
+  }
 }

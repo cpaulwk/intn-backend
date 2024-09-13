@@ -22,6 +22,13 @@ export class IdeasController {
     return this.ideasService.findAll();
   }
 
+  @Get('viewed')
+  @UseGuards(AuthGuard('jwt'))
+  async getViewedIdeas(@Req() req) {
+    const userId = req.user.id;
+    return this.ideasService.getViewedIdeas(userId);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<Idea> {
     const idea = await this.ideasService.findOne(id);
@@ -55,5 +62,12 @@ export class IdeasController {
       }
       throw error;
     }
+  }
+
+  @Post('viewed')
+  @UseGuards(AuthGuard('jwt'))
+  async addViewedIdea(@Req() req, @Body('ideaId') ideaId: string) {
+    const userId = req.user.id;
+    return this.ideasService.addViewedIdea(userId, ideaId);
   }
 }

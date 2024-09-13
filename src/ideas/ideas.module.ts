@@ -12,7 +12,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
   imports: [
     MongooseModule.forFeature([
       { name: Idea.name, schema: IdeaSchema },
-      { name: User.name, schema: UserSchema }
+      { name: User.name, schema: UserSchema },
     ]),
     EventEmitterModule.forRoot()
   ],

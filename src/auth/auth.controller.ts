@@ -6,7 +6,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from '../users/schemas/user.schema';
-
+import { CustomGoogleGuard } from './custom-google.guard';
 @Injectable()
 @Controller('auth/google')
 export class AuthController {
@@ -23,8 +23,13 @@ export class AuthController {
   }
 
   @Get('redirect')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(CustomGoogleGuard)
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
+    if (req.query.error === 'access_denied') {
+      // Handle access denied error
+      return res.redirect(`${process.env.FRONTEND_URL}`);
+    }
+
     const { access_token } = await this.authService.googleLogin(req.user);
     
     // Set the token as an HTTP-only cookie

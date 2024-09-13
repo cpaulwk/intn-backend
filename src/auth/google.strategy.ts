@@ -2,6 +2,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 import { Injectable } from '@nestjs/common';
 import { config } from 'dotenv';
+import { UnauthorizedException } from '@nestjs/common';
 
 config();
 
@@ -31,5 +32,16 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       accessToken,
     };
     done(null, user);
+  }
+
+  handleRequest(err, user, info, context) {
+    if (err || !user) {
+      const request = context.getRequest();
+      if (request.query.error === 'access_denied') {
+        return false;
+      }
+      throw err || new UnauthorizedException();
+    }
+    return user;
   }
 }

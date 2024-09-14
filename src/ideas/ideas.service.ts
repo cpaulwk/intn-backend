@@ -17,30 +17,31 @@ export class IdeasService {
     @InjectModel(User.name) private userModel: Model<User>
   ) {}
 
-  async create(createIdeaDto: CreateIdeaDto): Promise<Idea> {
+  async create(createIdeaDto: CreateIdeaDto, userId?: string): Promise<Idea> {
+    let enhancedIdea = createIdeaDto;
+
+    if (!createIdeaDto.description && userId) {
+      const { title, description } = await this.openAIService.enhanceIdea(createIdeaDto.title, userId);
+      enhancedIdea = { ...createIdeaDto, title, description };
+    }
+
     const createdIdea = new this.ideaModel({
-      ...createIdeaDto,
+      ...enhancedIdea,
       submissionDate: new Date(),
-      upvotes: 0
+      upvotes: enhancedIdea.upvotes || 1,
+      upvotedBy: userId ? [userId] : []
     });
+
     const savedIdea = await createdIdea.save();
+
+    if (userId) {
+      await this.userModel.findByIdAndUpdate(userId, {
+        $addToSet: { upvotedIdeas: savedIdea._id }
+      });
+    }
+
     this.eventEmitter.emit('idea.created', savedIdea);
     return savedIdea;
-  }
-
-  async createIdea(createIdeaDto: CreateIdeaDto): Promise<Idea> {
-    try {
-      const { title, description } = await this.openAIService.enhanceIdea(createIdeaDto.title);
-      const newIdea = await this.create({
-        ...createIdeaDto,
-        title,
-        description
-      });
-      return newIdea;
-    } catch (error) {
-      console.error('Error creating idea:', error);
-      throw new Error('Failed to create enhanced idea');
-    }
   }
 
   async findAll(): Promise<Idea[]> {

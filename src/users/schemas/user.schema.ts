@@ -17,6 +17,9 @@ export class User extends Document {
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Idea' }] })
   upvotedIdeas: Types.ObjectId[];
+
+  @Prop({ type: [Date], default: [] })
+  ideaSubmissions: Date[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

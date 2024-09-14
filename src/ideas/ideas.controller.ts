@@ -9,12 +9,10 @@ export class IdeasController {
   constructor(private readonly ideasService: IdeasService) {}
 
   @Post()
-  async create(@Body() createIdeaDto: CreateIdeaDto): Promise<Idea> {
-    if (createIdeaDto.description) {
-      return this.ideasService.create(createIdeaDto);
-    } else {
-      return this.ideasService.createIdea(createIdeaDto);
-    }
+  @UseGuards(AuthGuard('jwt'))
+  async create(@Body() createIdeaDto: CreateIdeaDto, @Req() req): Promise<Idea> {
+    const userId = req.user.id;
+    return this.ideasService.create(createIdeaDto, userId);
   }
 
   @Get()

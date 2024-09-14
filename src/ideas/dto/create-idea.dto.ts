@@ -19,5 +19,5 @@ export class CreateIdeaDto {
   @IsNumber()
   @IsOptional()
   @Min(0)
-  readonly upvotes?: number;
+  readonly upvotes?: number = 1;
 }

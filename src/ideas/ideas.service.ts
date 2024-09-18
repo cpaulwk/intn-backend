@@ -79,7 +79,7 @@ export class IdeasService {
 
   async getViewedIdeas(userId: string): Promise<Idea[]> {
     const user = await this.userModel.findById(userId).exec();
-    return this.ideaModel.find({ _id: { $in: user.viewedIdeas } }).limit(5).exec();
+    return this.ideaModel.find({ _id: { $in: user.viewedIdeas } }).limit(50).exec();
   }
 
 }

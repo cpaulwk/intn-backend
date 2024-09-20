@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Model } from 'mongoose';
 import { User } from '../users/schemas/user.schema';
 
+@Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
@@ -11,28 +12,44 @@ export class AuthService {
   ) {}
 
   async googleLogin(user: any) {
-    if (!user|| !user.email) {
+    if (!user || !user.email) {
       throw new Error('Invalid user data from Google');
     }
 
     let dbUser = await this.userModel.findOne({ email: user.email });
 
     if (!dbUser) {
-      // Create a new user if not found
       const newUser = {
         email: user.email,
         firstName: user.firstName || '',
         lastName: user.lastName || '',
-        // other fields as needed
       };
       dbUser = new this.userModel(newUser);
       await dbUser.save();
     }
 
-    const payload = { email: dbUser.email, sub: dbUser._id };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
+    return this.generateTokens(dbUser);
+  }
+
+  async generateTokens(user: User) {
+    const payload = { email: user.email, sub: user._id };
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+    return { accessToken, refreshToken };
+  }
+
+  async refreshTokens(refreshToken: string) {
+    try {
+      const decoded = this.jwtService.verify(refreshToken);
+      const user = await this.userModel.findById(decoded.sub);
+      
+      if (!user) throw new Error('User not found');
+
+      return this.generateTokens(user);
+    } catch (error) {
+      throw new Error('Invalid refresh token');
+    }
   }
 
   async upvoteIdea(userId: string, ideaId: string) {

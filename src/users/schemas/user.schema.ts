@@ -20,6 +20,9 @@ export class User extends Document {
 
   @Prop({ type: [Date], default: [] })
   ideaSubmissions: Date[];
+
+  @Prop({ type: [{ token: String, expires: Date }], default: [] })
+  refreshTokens: { token: string; expires: Date }[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

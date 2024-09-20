@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from '../users/schemas/user.schema';
 import { CustomGoogleGuard } from './custom-google.guard';
+
 @Injectable()
 @Controller('auth/google')
 export class AuthController {
@@ -29,20 +30,13 @@ export class AuthController {
       return res.redirect(`${process.env.FRONTEND_URL}`);
     }
 
-    const { accessToken, refreshToken } = await this.authService.googleLogin(req.user);
+    const { accessToken} = await this.authService.googleLogin(req.user);
     
     res.cookie('auth_token', accessToken, { 
       httpOnly: true, 
       secure: process.env.NODE_ENV === 'production', 
       sameSite: 'strict',
       maxAge: 15 * 60 * 1000 // 15 minutes
-    });
-
-    res.cookie('refresh_token', refreshToken, { 
-      httpOnly: true, 
-      secure: process.env.NODE_ENV === 'production', 
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
     res.redirect(`${process.env.FRONTEND_URL}`);
@@ -63,20 +57,23 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout(@Res({ passthrough: true }) res: Response) {
+  @UseGuards(AuthGuard('jwt'))
+  async logout(@Req() req, @Res({ passthrough: true }) res: Response) {
+    await this.authService.revokeRefreshTokens(req.user.id);
     res.clearCookie('auth_token');
+    res.clearCookie('refresh_token');
     return { message: 'Logged out successfully' };
   }
 
   @Post('refresh')
-  async refreshTokens(@Req() req, @Res({ passthrough: true }) res: Response) {
-    const refreshToken = req.cookies['refresh_token'];
+  async refreshToken(@Req() req, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies?.refresh_token;
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token not found');
     }
 
     try {
-      const { accessToken, refreshToken: newRefreshToken } = await this.authService.refreshTokens(refreshToken);
+      const { accessToken } = await this.authService.refreshToken(refreshToken);
 
       res.cookie('auth_token', accessToken, {
         httpOnly: true,
@@ -85,16 +82,14 @@ export class AuthController {
         maxAge: 15 * 60 * 1000 // 15 minutes
       });
 
-      res.cookie('refresh_token', newRefreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-      });
-
-      return { message: 'Tokens refreshed successfully' };
+      return { message: 'Access token refreshed successfully' };
     } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
+      if (error instanceof UnauthorizedException) {
+        // Clear both tokens if refresh token is invalid or expired
+        res.clearCookie('auth_token');
+        res.clearCookie('refresh_token');
+      }
+      throw error;
     }
   }
 }

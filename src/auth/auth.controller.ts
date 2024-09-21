@@ -73,7 +73,7 @@ export class AuthController {
     }
 
     try {
-      const { accessToken } = await this.authService.refreshToken(refreshToken);
+      const { accessToken, refreshToken: newRefreshToken } = await this.authService.refreshToken(refreshToken);
 
       res.cookie('auth_token', accessToken, {
         httpOnly: true,
@@ -82,7 +82,14 @@ export class AuthController {
         maxAge: 15 * 60 * 1000 // 15 minutes
       });
 
-      return { message: 'Access token refreshed successfully' };
+      res.cookie('refresh_token', newRefreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+
+      return { message: 'Tokens refreshed successfully' };
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         // Clear both tokens if refresh token is invalid or expired

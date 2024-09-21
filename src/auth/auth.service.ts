@@ -71,11 +71,13 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      // Generate new access token
-      const payload = { email: user.email, sub: user._id };
-      const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+      // Remove the used refresh token
+      user.refreshTokens.splice(tokenIndex, 1);
 
-      return { accessToken };
+      // Generate new tokens
+      const { accessToken, refreshToken: newRefreshToken } = await this.generateTokens(user);
+
+      return { accessToken, refreshToken: newRefreshToken };
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }

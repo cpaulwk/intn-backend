@@ -7,8 +7,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from '../users/schemas/user.schema';
 import { CustomGoogleGuard } from './custom-google.guard';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 @Injectable()
+@UseGuards(ThrottlerGuard)
 @Controller('auth/google')
 export class AuthController {
   constructor(
@@ -25,6 +27,7 @@ export class AuthController {
 
   @Get('redirect')
   @UseGuards(CustomGoogleGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
     if (req.query.error === 'access_denied') {
       return res.redirect(`${process.env.FRONTEND_URL}`);

@@ -75,9 +75,9 @@ export class AuthService {
       user.refreshTokens.splice(tokenIndex, 1);
 
       // Generate new tokens
-      const { accessToken, refreshToken: newRefreshToken } = await this.generateTokens(user);
+      const { accessToken } = await this.generateTokens(user);
 
-      return { accessToken, refreshToken: newRefreshToken };
+      return { accessToken };
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }

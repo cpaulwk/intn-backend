@@ -19,7 +19,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     ThrottlerModule.forRoot([{
       ttl: 60000,
-      limit: 300,
+      limit: 10000,
     }]),
   ],
   controllers: [AuthController],

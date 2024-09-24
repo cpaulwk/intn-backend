@@ -45,7 +45,7 @@ export class IdeasService {
   }
 
   async findAll(): Promise<Idea[]> {
-    return this.ideaModel.find().exec();
+    return this.ideaModel.find().sort({ upvotes: -1 }).exec();
   }
 
   async toggleUpvote(id: string, userId: string): Promise<Idea> {

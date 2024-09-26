@@ -1,7 +1,5 @@
-import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-import { IdeasService } from './ideas.service';
-import { OnEvent } from '@nestjs/event-emitter';
 
 @WebSocketGateway({
   cors: {
@@ -9,32 +7,11 @@ import { OnEvent } from '@nestjs/event-emitter';
     credentials: true,
   },
 })
-export class IdeasGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class IdeasGateway {
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly ideasService: IdeasService) {}
-
-  handleConnection(client: any) {
-    console.log(`Client connected: ${client.id}`);
-  }
-
-  handleDisconnect(client: any) {
-    console.log(`Client disconnected: ${client.id}`);
-  }
-
-  @OnEvent('idea.created')
-  handleIdeaCreated(payload: any) {
-    this.server.emit('ideaCreated', payload);
-  }
-
-  @OnEvent('idea.upvoted')
-  handleIdeaUpvoted(payload: any) {
-    this.server.emit('ideaUpvoted', payload);
-  }
-
-  @OnEvent('idea.deleted')
-  handleIdeaDeleted(id: string) {
-    this.server.emit('ideaDeleted', id);
+  handleUpvoteUpdate(ideaId: string, newUpvoteCount: number) {
+    this.server.emit('upvoteUpdate', { ideaId, upvotes: newUpvoteCount });
   }
 }

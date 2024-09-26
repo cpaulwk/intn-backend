@@ -7,6 +7,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OpenAIService } from '../openai/openai.service';
 import { User } from '../users/schemas/user.schema';
 import { toggleUpvote } from '../utils/upvoteUtils';
+import { IdeasGateway } from './ideas.gateway';
 
 @Injectable()
 export class IdeasService {
@@ -14,7 +15,8 @@ export class IdeasService {
     @InjectModel(Idea.name) private ideaModel: Model<Idea>,
     private eventEmitter: EventEmitter2,
     private openAIService: OpenAIService,
-    @InjectModel(User.name) private userModel: Model<User>
+    @InjectModel(User.name) private userModel: Model<User>,
+    private ideasGateway: IdeasGateway
   ) {}
 
   async create(createIdeaDto: CreateIdeaDto, userId?: string): Promise<Idea> {
@@ -40,7 +42,6 @@ export class IdeasService {
       });
     }
 
-    this.eventEmitter.emit('idea.created', savedIdea);
     return savedIdea;
   }
 
@@ -50,7 +51,7 @@ export class IdeasService {
 
   async toggleUpvote(id: string, userId: string): Promise<Idea> {
     const updatedIdea = await toggleUpvote(this.ideaModel, this.userModel, id, userId);
-    this.eventEmitter.emit('idea.upvoteToggled', updatedIdea);
+    this.ideasGateway.handleUpvoteUpdate(id, updatedIdea.upvotes);
     return updatedIdea;
   }
 
@@ -63,7 +64,6 @@ export class IdeasService {
     if (!deletedIdea) {
       throw new NotFoundException(`Idea with ID "${id}" not found`);
     }
-    this.eventEmitter.emit('idea.deleted', id);
     return deletedIdea;
   }
 

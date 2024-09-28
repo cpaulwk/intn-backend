@@ -20,11 +20,39 @@ export class IdeasController {
     return this.ideasService.findAll();
   }
 
+  @Get('authenticated')
+  @UseGuards(AuthGuard('jwt'))
+  async findAllAuthenticated(@Req() req): Promise<Idea[]> {
+    const userId = req.user.id;
+    return this.ideasService.findAllAuthenticated(userId);
+  }
+
   @Get('viewed')
   @UseGuards(AuthGuard('jwt'))
   async getViewedIdeas(@Req() req) {
     const userId = req.user.id;
     return this.ideasService.getViewedIdeas(userId);
+  }
+
+  @Post('viewed')
+  @UseGuards(AuthGuard('jwt'))
+  async addViewedIdea(@Req() req, @Body('ideaId') ideaId: string) {
+    const userId = req.user.id;
+    return this.ideasService.addViewedIdea(userId, ideaId);
+  }
+
+  @Get('upvoted')
+  @UseGuards(AuthGuard('jwt'))
+  async getUpvotedIdeas(@Req() req): Promise<Idea[]> {
+    const userId = req.user.id;
+    return this.ideasService.getUpvotedIdeas(userId);
+  }
+
+  @Get('my-submissions')
+  @UseGuards(AuthGuard('jwt'))
+  async getMySubmissions(@Req() req): Promise<Idea[]> {
+    const userId = req.user.id;
+    return this.ideasService.getMySubmissions(userId);
   }
 
   @Get(':id')
@@ -38,7 +66,7 @@ export class IdeasController {
 
   @Put(':id/toggle-upvote')
   @UseGuards(AuthGuard('jwt'))
-  async toggleUpvote(@Param('id') id: string, @Req() req): Promise<Idea> {
+  async toggleUpvote(@Param('id') id: string, @Req() req): Promise<{ idea: Idea; isUpvoted: boolean }> {
     try {
       const userId = req.user.id;
       return await this.ideasService.toggleUpvote(id, userId);
@@ -60,12 +88,5 @@ export class IdeasController {
       }
       throw error;
     }
-  }
-
-  @Post('viewed')
-  @UseGuards(AuthGuard('jwt'))
-  async addViewedIdea(@Req() req, @Body('ideaId') ideaId: string) {
-    const userId = req.user.id;
-    return this.ideasService.addViewedIdea(userId, ideaId);
   }
 }

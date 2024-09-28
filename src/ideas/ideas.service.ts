@@ -46,13 +46,24 @@ export class IdeasService {
   }
 
   async findAll(): Promise<Idea[]> {
-    return this.ideaModel.find().sort({ upvotes: -1 }).exec();
+    return this.ideaModel.find().exec();
   }
 
-  async toggleUpvote(id: string, userId: string): Promise<Idea> {
-    const updatedIdea = await toggleUpvote(this.ideaModel, this.userModel, id, userId);
-    this.ideasGateway.handleUpvoteUpdate(id, updatedIdea.upvotes);
-    return updatedIdea;
+  async findAllAuthenticated(userId: string): Promise<Idea[]> {
+    const ideas = await this.ideaModel.find().exec();
+    const user = await this.userModel.findById(userId);
+    
+    return ideas.map(idea => ({
+      ...idea.toObject(),
+      isUpvoted: user.upvotedIdeas.includes(idea._id)
+    }));
+  }
+
+  async toggleUpvote(ideaId: string, userId: string): Promise<{ idea: Idea; isUpvoted: boolean }> {
+    const updatedIdea = await toggleUpvote(this.ideaModel, this.userModel, ideaId, userId);
+    const user = await this.userModel.findById(userId);
+    const isUpvoted = user.upvotedIdeas.includes(new Types.ObjectId(ideaId));
+    return { idea: updatedIdea, isUpvoted };
   }
 
   async findOne(id: string): Promise<Idea | null> {
@@ -82,4 +93,25 @@ export class IdeasService {
     return this.ideaModel.find({ _id: { $in: user.viewedIdeas } }).limit(50).exec();
   }
 
+  async getUpvotedIdeas(userId: string): Promise<Idea[]> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.ideaModel.find({
+      _id: { $in: user.upvotedIdeas }
+    }).exec();
+  }
+
+  async getMySubmissions(userId: string): Promise<Idea[]> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.ideaModel.find({
+      username: user.email
+    }).exec();
+  }
 }

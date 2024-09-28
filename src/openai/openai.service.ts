@@ -46,7 +46,7 @@ export class OpenAIService {
 
   private async filterContent(input: string): Promise<void> {
     // Basic content filtering (you may want to use a more sophisticated solution)
-    const inappropriateWords = ['offensive', 'inappropriate', 'vulgar', 'kill', 'bomb']; // Add more as needed
+    const inappropriateWords = ['offensive', 'inappropriate', 'vulgar', 'bomb']; // Add more as needed
     const lowercaseInput = input.toLowerCase();
     for (const word of inappropriateWords) {
       if (lowercaseInput.includes(word)) {

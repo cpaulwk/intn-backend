@@ -30,8 +30,7 @@ export class IdeasService {
     const createdIdea = new this.ideaModel({
       ...enhancedIdea,
       submissionDate: new Date(),
-      upvotes: enhancedIdea.upvotes || 1,
-      upvotedBy: userId ? [userId] : []
+      upvotes: 1,
     });
 
     const savedIdea = await createdIdea.save();
@@ -60,10 +59,34 @@ export class IdeasService {
   }
 
   async toggleUpvote(ideaId: string, userId: string): Promise<{ idea: Idea; isUpvoted: boolean }> {
-    const updatedIdea = await toggleUpvote(this.ideaModel, this.userModel, ideaId, userId);
+    const idea = await this.ideaModel.findById(ideaId);
+    if (!idea) {
+      throw new NotFoundException(`Idea with ID "${ideaId}" not found`);
+    }
+
     const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID "${userId}" not found`);
+    }
+
     const isUpvoted = user.upvotedIdeas.includes(new Types.ObjectId(ideaId));
-    return { idea: updatedIdea, isUpvoted };
+    
+    if (isUpvoted) {
+      idea.upvotes--;
+      user.upvotedIdeas = user.upvotedIdeas.filter(id => !id.equals(new Types.ObjectId(ideaId)));
+    } else {
+      idea.upvotes++;
+      user.upvotedIdeas.push(new Types.ObjectId(ideaId));
+    }
+
+    // Ensure the username is set if it's missing
+    if (!idea.username) {
+      idea.username = user.email || '';
+    }
+
+    await Promise.all([idea.save(), user.save()]);
+
+    return { idea, isUpvoted: !isUpvoted };
   }
 
   async findOne(id: string): Promise<Idea | null> {
@@ -99,9 +122,14 @@ export class IdeasService {
       throw new NotFoundException('User not found');
     }
 
-    return this.ideaModel.find({
+    const ideas = await this.ideaModel.find({
       _id: { $in: user.upvotedIdeas }
     }).exec();
+
+    return ideas.map(idea => ({
+      ...idea.toObject(),
+      isUpvoted: true // All returned ideas are upvoted by the user
+    }));
   }
 
   async getMySubmissions(userId: string): Promise<Idea[]> {
@@ -110,8 +138,13 @@ export class IdeasService {
       throw new NotFoundException('User not found');
     }
 
-    return this.ideaModel.find({
+    const ideas = await this.ideaModel.find({
       username: user.email
     }).exec();
+
+    return ideas.map(idea => ({
+      ...idea.toObject(),
+      isUpvoted: user.upvotedIdeas.includes(idea._id)
+    }));
   }
 }

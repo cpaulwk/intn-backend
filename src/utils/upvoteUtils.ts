@@ -21,22 +21,16 @@ export const toggleUpvote = async (
   }
 
   const isUpvoted = user.upvotedIdeas.includes(new Types.ObjectId(ideaId));
-  const updateOperation = isUpvoted
-    ? { $inc: { upvotes: -1 }, $pull: { upvotedBy: userId } }
-    : { $inc: { upvotes: 1 }, $addToSet: { upvotedBy: userId } };
-
-  const updatedIdea = await ideaModel.findByIdAndUpdate(
-    ideaId,
-    updateOperation,
-    { new: true }
-  ).exec();
-
+  
   if (isUpvoted) {
-    user.upvotedIdeas = user.upvotedIdeas.filter(id => id.toString() !== ideaId);
+    idea.upvotes--;
+    user.upvotedIdeas = user.upvotedIdeas.filter(id => !id.equals(new Types.ObjectId(ideaId)));
   } else {
+    idea.upvotes++;
     user.upvotedIdeas.push(new Types.ObjectId(ideaId));
   }
-  await user.save();
 
-  return updatedIdea;
+  await Promise.all([idea.save(), user.save()]);
+
+  return idea;
 };

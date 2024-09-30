@@ -9,8 +9,8 @@ export class CreateIdeaDto {
   readonly description: string = ''; // Default to empty string
 
   @IsString()
-  @IsNotEmpty()
-  readonly username: string;
+  @IsOptional()
+  readonly username?: string;
 
   @IsDateString()
   @IsOptional()

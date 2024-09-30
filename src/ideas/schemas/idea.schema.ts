@@ -13,11 +13,8 @@ export class Idea {
   @Prop({ default: 0 })
   upvotes: number;
 
-  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] })
-  upvotedBy: string[];
-
-  @Prop({ required: true })
-  username: string;
+  @Prop({ required: false })
+  username?: string;
 }
 
 export const IdeaSchema = SchemaFactory.createForClass(Idea);

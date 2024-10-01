@@ -147,4 +147,36 @@ export class IdeasService {
       isUpvoted: user.upvotedIdeas.includes(idea._id)
     }));
   }
+
+  async getAllData(userId: string): Promise<{ ideas: Idea[], recentlyViewed: Idea[] }> {
+    const [ideas, recentlyViewed] = await Promise.all([
+      this.findAllAuthenticated(userId),
+      this.getViewedIdeas(userId)
+    ]);
+
+    return { ideas, recentlyViewed };
+  }
+
+  async getUserIdeas(userId: string): Promise<{ submittedIdeas: Idea[], upvotedIdeas: Idea[] }> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const [submittedIdeas, upvotedIdeas] = await Promise.all([
+      this.ideaModel.find({ username: user.email }).exec(),
+      this.ideaModel.find({ _id: { $in: user.upvotedIdeas } }).exec()
+    ]);
+
+    return {
+      submittedIdeas: submittedIdeas.map(idea => ({
+        ...idea.toObject(),
+        isUpvoted: user.upvotedIdeas.includes(idea._id)
+      })),
+      upvotedIdeas: upvotedIdeas.map(idea => ({
+        ...idea.toObject(),
+        isUpvoted: true
+      }))
+    };
+  }
 }

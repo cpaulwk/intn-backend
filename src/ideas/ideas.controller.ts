@@ -41,20 +41,18 @@ export class IdeasController {
     return this.ideasService.addViewedIdea(userId, ideaId);
   }
 
-  @Get('upvoted')
+  @Get('all-data')
   @UseGuards(AuthGuard('jwt'))
-  async getUpvotedIdeas(@Req() req): Promise<Idea[]> {
+  async getAllData(@Req() req): Promise<{ ideas: Idea[], recentlyViewed: Idea[] }> {
     const userId = req.user.id;
-    return this.ideasService.getUpvotedIdeas(userId);
+    return this.ideasService.getAllData(userId);
   }
-
-  @Get('my-submissions')
+  @Get('user-ideas')
   @UseGuards(AuthGuard('jwt'))
-  async getMySubmissions(@Req() req): Promise<Idea[]> {
+  async getUserIdeas(@Req() req): Promise<{ submittedIdeas: Idea[], upvotedIdeas: Idea[] }> {
     const userId = req.user.id;
-    return this.ideasService.getMySubmissions(userId);
+    return this.ideasService.getUserIdeas(userId);
   }
-
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<Idea> {
     const idea = await this.ideasService.findOne(id);

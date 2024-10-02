@@ -30,6 +30,7 @@ export class IdeasService {
       ...enhancedIdea,
       submissionDate: new Date(),
       upvotes: 1,
+      createdAt: new Date(),
     });
 
     const savedIdea = await createdIdea.save();
@@ -44,7 +45,7 @@ export class IdeasService {
   }
 
   async findAll(): Promise<Idea[]> {
-    return this.ideaModel.find().exec();
+    return this.ideaModel.find().sort({ upvotes: -1 }).exec();
   }
 
   async findAllAuthenticated(userId: string): Promise<Idea[]> {
@@ -132,8 +133,8 @@ export class IdeasService {
     const [ideas, recentlyViewed, submittedIdeas, upvotedIdeas] = await Promise.all([
       this.findAllAuthenticated(userId),
       this.getViewedIdeas(userId),
-      this.ideaModel.find({ username: user.email }).exec(),
-      this.ideaModel.find({ _id: { $in: user.upvotedIdeas } }).exec()
+      this.ideaModel.find({ username: user.email }).sort({ createdAt: -1 }).exec(),
+      this.ideaModel.find({ _id: { $in: user.upvotedIdeas } }).sort({ createdAt: -1 }).exec()
     ]);
 
     return {

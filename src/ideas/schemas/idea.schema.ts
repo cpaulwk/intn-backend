@@ -1,6 +1,4 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-import mongoose from 'mongoose';
 
 @Schema()
 export class Idea {
@@ -15,6 +13,9 @@ export class Idea {
 
   @Prop({ required: false })
   username?: string;
+
+  @Prop({ default: Date.now })
+  createdAt: Date;
 }
 
 export const IdeaSchema = SchemaFactory.createForClass(Idea);

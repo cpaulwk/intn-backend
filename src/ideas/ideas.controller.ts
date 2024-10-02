@@ -87,4 +87,11 @@ export class IdeasController {
       throw error;
     }
   }
+
+  @Delete('recently-viewed/:id')
+  @UseGuards(AuthGuard('jwt'))
+  async removeRecentlyViewed(@Param('id') id: string, @Req() req): Promise<void> {
+    const userId = req.user.id;
+    return this.ideasService.removeRecentlyViewed(userId, id);
+  }
 }

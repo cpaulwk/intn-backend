@@ -150,4 +150,14 @@ export class IdeasService {
       }))
     };
   }
+
+  async removeRecentlyViewed(userId: string, ideaId: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(
+      userId,
+      {
+        $pull: { viewedIdeas: ideaId },
+      },
+      { new: true }
+    );
+  }
 }

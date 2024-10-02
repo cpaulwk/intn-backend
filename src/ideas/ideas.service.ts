@@ -115,7 +115,15 @@ export class IdeasService {
     return this.ideaModel.find({ _id: { $in: user.viewedIdeas } }).limit(50).exec();
   }
 
-  async getAllData(userId: string): Promise<{ ideas: Idea[], recentlyViewed: Idea[], submittedIdeas: Idea[], upvotedIdeas: Idea[] }> {
+  async getAllDataUnauthenticated(): Promise<{ ideas: Idea[]}> {
+    const ideas = await this.findAll();
+
+    return {
+      ideas,
+    };
+  }
+
+  async getAllDataAuthenticated(userId: string): Promise<{ ideas: Idea[], recentlyViewed: Idea[], submittedIdeas: Idea[], upvotedIdeas: Idea[] }> {
     const user = await this.userModel.findById(userId).exec();
     if (!user) {
       throw new NotFoundException('User not found');

@@ -41,11 +41,16 @@ export class IdeasController {
     return this.ideasService.addViewedIdea(userId, ideaId);
   }
 
-  @Get('all-data')
+  @Get('all-data-authenticated')
   @UseGuards(AuthGuard('jwt'))
-  async getAllData(@Req() req): Promise<{ ideas: Idea[], recentlyViewed: Idea[], submittedIdeas: Idea[], upvotedIdeas: Idea[] }> {
+  async getAllDataAuthenticated(@Req() req): Promise<{ ideas: Idea[], recentlyViewed: Idea[], submittedIdeas: Idea[], upvotedIdeas: Idea[] }> {
     const userId = req.user.id;
-    return this.ideasService.getAllData(userId);
+    return this.ideasService.getAllDataAuthenticated(userId);
+  }
+
+  @Get('all-data-unauthenticated')
+  async getAllDataUnauthenticated(): Promise<{ ideas: Idea[]}> {
+    return this.ideasService.getAllDataUnauthenticated();
   }
 
   @Get(':id')

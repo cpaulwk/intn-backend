@@ -6,7 +6,6 @@ import { CreateIdeaDto } from './dto/create-idea.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OpenAIService } from '../openai/openai.service';
 import { User } from '../users/schemas/user.schema';
-import { toggleUpvote } from '../utils/upvoteUtils';
 import { IdeasGateway } from './ideas.gateway';
 
 @Injectable()
@@ -116,59 +115,22 @@ export class IdeasService {
     return this.ideaModel.find({ _id: { $in: user.viewedIdeas } }).limit(50).exec();
   }
 
-  async getUpvotedIdeas(userId: string): Promise<Idea[]> {
+  async getAllData(userId: string): Promise<{ ideas: Idea[], recentlyViewed: Idea[], submittedIdeas: Idea[], upvotedIdeas: Idea[] }> {
     const user = await this.userModel.findById(userId).exec();
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const ideas = await this.ideaModel.find({
-      _id: { $in: user.upvotedIdeas }
-    }).exec();
-
-    return ideas.map(idea => ({
-      ...idea.toObject(),
-      isUpvoted: true // All returned ideas are upvoted by the user
-    }));
-  }
-
-  async getMySubmissions(userId: string): Promise<Idea[]> {
-    const user = await this.userModel.findById(userId).exec();
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const ideas = await this.ideaModel.find({
-      username: user.email
-    }).exec();
-
-    return ideas.map(idea => ({
-      ...idea.toObject(),
-      isUpvoted: user.upvotedIdeas.includes(idea._id)
-    }));
-  }
-
-  async getAllData(userId: string): Promise<{ ideas: Idea[], recentlyViewed: Idea[] }> {
-    const [ideas, recentlyViewed] = await Promise.all([
+    const [ideas, recentlyViewed, submittedIdeas, upvotedIdeas] = await Promise.all([
       this.findAllAuthenticated(userId),
-      this.getViewedIdeas(userId)
-    ]);
-
-    return { ideas, recentlyViewed };
-  }
-
-  async getUserIdeas(userId: string): Promise<{ submittedIdeas: Idea[], upvotedIdeas: Idea[] }> {
-    const user = await this.userModel.findById(userId).exec();
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const [submittedIdeas, upvotedIdeas] = await Promise.all([
+      this.getViewedIdeas(userId),
       this.ideaModel.find({ username: user.email }).exec(),
       this.ideaModel.find({ _id: { $in: user.upvotedIdeas } }).exec()
     ]);
 
     return {
+      ideas,
+      recentlyViewed,
       submittedIdeas: submittedIdeas.map(idea => ({
         ...idea.toObject(),
         isUpvoted: user.upvotedIdeas.includes(idea._id)

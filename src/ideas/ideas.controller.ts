@@ -43,16 +43,11 @@ export class IdeasController {
 
   @Get('all-data')
   @UseGuards(AuthGuard('jwt'))
-  async getAllData(@Req() req): Promise<{ ideas: Idea[], recentlyViewed: Idea[] }> {
+  async getAllData(@Req() req): Promise<{ ideas: Idea[], recentlyViewed: Idea[], submittedIdeas: Idea[], upvotedIdeas: Idea[] }> {
     const userId = req.user.id;
     return this.ideasService.getAllData(userId);
   }
-  @Get('user-ideas')
-  @UseGuards(AuthGuard('jwt'))
-  async getUserIdeas(@Req() req): Promise<{ submittedIdeas: Idea[], upvotedIdeas: Idea[] }> {
-    const userId = req.user.id;
-    return this.ideasService.getUserIdeas(userId);
-  }
+
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<Idea> {
     const idea = await this.ideasService.findOne(id);

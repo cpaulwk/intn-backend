@@ -77,15 +77,10 @@ export class IdeasController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<Idea> {
-    try {
-      return await this.ideasService.remove(id);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException(error.message);
-      }
-      throw error;
-    }
+  @UseGuards(AuthGuard('jwt'))
+  async deleteIdea(@Param('id') id: string, @Req() req) {
+    const userId = req.user.id;
+    return this.ideasService.deleteIdea(id, userId);
   }
 
   @Delete('recently-viewed/:id')

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Idea } from './schemas/idea.schema';
@@ -159,5 +159,27 @@ export class IdeasService {
       },
       { new: true }
     );
+  }
+
+  async deleteIdea(ideaId: string, userId: string): Promise<void> {
+    const idea = await this.ideaModel.findById(ideaId);
+    if (!idea) {
+      throw new NotFoundException(`Idea with ID "${ideaId}" not found`);
+    }
+
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID "${userId}" not found`);
+    }
+
+    if (idea.username !== user.email) {
+      throw new ForbiddenException('You are not authorized to delete this idea');
+    }
+
+    await this.ideaModel.findByIdAndDelete(ideaId);
+
+    // Remove the idea from user's upvotedIdeas if it exists
+    user.upvotedIdeas = user.upvotedIdeas.filter(id => !id.equals(new Types.ObjectId(ideaId)));
+    await user.save();
   }
 }

@@ -7,6 +7,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OpenAIService } from '../openai/openai.service';
 import { User } from '../users/schemas/user.schema';
 import { IdeasGateway } from './ideas.gateway';
+import { UpdateIdeaDto } from './dto/update-idea.dto';
 
 @Injectable()
 export class IdeasService {
@@ -181,5 +182,33 @@ export class IdeasService {
     // Remove the idea from user's upvotedIdeas if it exists
     user.upvotedIdeas = user.upvotedIdeas.filter(id => !id.equals(new Types.ObjectId(ideaId)));
     await user.save();
+  }
+
+  async update(ideaId: string, updateIdeaDto: UpdateIdeaDto, userId: string): Promise<Idea> {
+    const idea = await this.ideaModel.findById(ideaId);
+    if (!idea) {
+      throw new NotFoundException(`Idea with ID "${ideaId}" not found`);
+    }
+
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID "${userId}" not found`);
+    }
+
+    if (idea.username !== user.email) {
+      throw new ForbiddenException('You are not authorized to update this idea');
+    }
+
+    const updatedIdea = await this.ideaModel.findByIdAndUpdate(
+      ideaId,
+      { $set: updateIdeaDto },
+      { new: true }
+    );
+
+    if (!updatedIdea) {
+      throw new NotFoundException(`Idea with ID "${ideaId}" not found`);
+    }
+
+    return updatedIdea;
   }
 }

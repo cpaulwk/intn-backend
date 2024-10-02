@@ -3,7 +3,7 @@ import { IdeasService } from './ideas.service';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { Idea } from './schemas/idea.schema';
 import { AuthGuard } from '@nestjs/passport';
-
+import { UpdateIdeaDto } from './dto/update-idea.dto';
 @Controller('ideas')
 export class IdeasController {
   constructor(private readonly ideasService: IdeasService) {}
@@ -60,6 +60,13 @@ export class IdeasController {
       throw new NotFoundException('Idea not found');
     }
     return idea;
+  }
+
+  @Put(':id')
+  @UseGuards(AuthGuard('jwt'))
+  async update(@Param('id') id: string, @Body() updateIdeaDto: UpdateIdeaDto, @Req() req): Promise<Idea> {
+    const userId = req.user.id;
+    return this.ideasService.update(id, updateIdeaDto, userId);
   }
 
   @Put(':id/toggle-upvote')

@@ -216,4 +216,18 @@ export class IdeasService {
     const enhancedText = await this.openAIService.enhanceText(type, title, description, userId);
     return enhancedText;
   }
+
+  async canUserEditIdea(ideaId: string, userId: string): Promise<boolean> {
+    const idea = await this.ideaModel.findById(ideaId);
+    if (!idea) {
+      throw new NotFoundException(`Idea with ID "${ideaId}" not found`);
+    }
+
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID "${userId}" not found`);
+    }
+
+    return idea.username === user.email;
+  }
 }

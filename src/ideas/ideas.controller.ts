@@ -4,6 +4,8 @@ import { CreateIdeaDto } from './dto/create-idea.dto';
 import { Idea } from './schemas/idea.schema';
 import { AuthGuard } from '@nestjs/passport';
 import { UpdateIdeaDto } from './dto/update-idea.dto';
+import { ForbiddenException } from '@nestjs/common';
+
 @Controller('ideas')
 export class IdeasController {
   constructor(private readonly ideasService: IdeasService) {}
@@ -108,5 +110,18 @@ export class IdeasController {
     const userId = req.user.id;
     const enhancedText = await this.ideasService.enhanceText(type, title, description, userId);
     return { enhancedText };
+  }
+
+  @Get(':id/edit')
+  @UseGuards(AuthGuard('jwt'))
+  async editIdea(@Param('id') id: string, @Req() req): Promise<{ redirectUrl: string }> {
+    const userId = req.user.id;
+    const canEdit = await this.ideasService.canUserEditIdea(id, userId);
+    
+    if (canEdit) {
+      return { redirectUrl: `${process.env.FRONTEND_URL}/edit-idea/${id}` };
+    } else {
+      throw new ForbiddenException('You are not authorized to edit this idea');
+    }
   }
 }

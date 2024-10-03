@@ -24,7 +24,7 @@ export class OpenAIService {
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
     const recentSubmissions = user.ideaSubmissions.filter(submission => submission > oneHourAgo);
 
-    if (recentSubmissions.length >= 10) {
+    if (recentSubmissions.length >= 30) {
       throw new BadRequestException('You have submitted too many ideas recently. Please try again later.');
     }
 
@@ -38,7 +38,7 @@ export class OpenAIService {
   }
 
   private validateInputLength(input: string): void {
-    const MAX_LENGTH = 500; // Adjust as needed
+    const MAX_LENGTH = 1200; // Adjust as needed
     if (input.length > MAX_LENGTH) {
       throw new BadRequestException(`Idea exceeds maximum length of ${MAX_LENGTH} characters`);
     }
@@ -73,12 +73,12 @@ export class OpenAIService {
       this.validateInputLength(sanitizedIdea);
       await this.filterContent(sanitizedIdea);
 
-      const prompt = `Enhance the following idea and provide a structured response:
+      const prompt = `Enhance the following business idea and provide a structured response:
       "${sanitizedIdea}"
 
       Respond with a JSON object containing:
-      1. "title": 1 sentence title without :
-      2. "description": An expanded description (2-3 sentences)`;
+      1. "title": title without a colon in less than 12 words
+      2. "description": An expanded description describing the main features and the pain points it solves in 2-3 sentences`;
 
       const completion = await this.openai.chat.completions.create({
         model: "gpt-4o-mini",
@@ -100,5 +100,55 @@ export class OpenAIService {
       }
       throw new InternalServerErrorException('Failed to enhance idea using OpenAI');
     }
+  }
+
+  async enhanceText(type: 'title' | 'description', title: string, description: string, userId: string): Promise<string> {
+    try {
+      await this.checkThrottle(userId);
+      const sanitizedTitle = this.sanitizeInput(title);
+      const sanitizedDescription = this.sanitizeInput(description);
+      this.validateInputLength(sanitizedTitle);
+      this.validateInputLength(sanitizedDescription);
+      await this.filterContent(sanitizedTitle);
+      await this.filterContent(sanitizedDescription);
+
+      let prompt: string;
+      if (type === 'title') {
+        prompt = `Enhance the following title describing the idea in less than 12 words without a colon and remove any colons:
+        Title: "${sanitizedTitle}"
+        Description: "${sanitizedDescription}"
+
+        Provide only the enhanced title in your response.`;
+      } else {
+        prompt = `Enhance the following description, making it more engaging and professional:
+        Title: "${sanitizedTitle}"
+        Description: "${sanitizedDescription || 'No description provided.'}"
+
+        Provide only the description in 2-3 sentences describing the main features and the pain points it solves.`;
+      }
+
+      const completion = await this.openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 300,
+        response_format: { type: "text" },
+      });
+
+      if (completion.choices && completion.choices[0] && completion.choices[0].message) {
+        return this.removeQuotes(completion.choices[0].message.content.trim());
+      } else {
+        throw new InternalServerErrorException('Unexpected response structure from OpenAI');
+      }
+    } catch (error) {
+      console.error('Error in enhanceText:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to enhance text using OpenAI');
+    }
+  }
+
+  private removeQuotes(str: string): string {
+    return str.replace(/^"(.*)"$/, '$1');
   }
 }

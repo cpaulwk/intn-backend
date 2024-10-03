@@ -96,4 +96,17 @@ export class IdeasController {
     const userId = req.user.id;
     return this.ideasService.removeRecentlyViewed(userId, id);
   }
+
+  @Post('enhance-text')
+  @UseGuards(AuthGuard('jwt'))
+  async enhanceText(
+    @Body('type') type: 'title' | 'description',
+    @Body('title') title: string,
+    @Body('description') description: string,
+    @Req() req
+  ): Promise<{ enhancedText: string }> {
+    const userId = req.user.id;
+    const enhancedText = await this.ideasService.enhanceText(type, title, description, userId);
+    return { enhancedText };
+  }
 }

@@ -211,4 +211,9 @@ export class IdeasService {
 
     return updatedIdea;
   }
+
+  async enhanceText(type: 'title' | 'description', title: string, description: string, userId: string): Promise<string> {
+    const enhancedText = await this.openAIService.enhanceText(type, title, description, userId);
+    return enhancedText;
+  }
 }

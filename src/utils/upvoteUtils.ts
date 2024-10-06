@@ -1,14 +1,14 @@
 import { NotFoundException } from '@nestjs/common';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
+
 import { Idea } from '../ideas/schemas/idea.schema';
 import { User } from '../users/schemas/user.schema';
-import { Types } from 'mongoose';
 
 export const toggleUpvote = async (
   ideaModel: Model<Idea>,
   userModel: Model<User>,
   ideaId: string,
-  userId: string
+  userId: string,
 ): Promise<Idea> => {
   const idea = await ideaModel.findById(ideaId).exec();
   if (!idea) {
@@ -21,10 +21,12 @@ export const toggleUpvote = async (
   }
 
   const isUpvoted = user.upvotedIdeas.includes(new Types.ObjectId(ideaId));
-  
+
   if (isUpvoted) {
     idea.upvotes--;
-    user.upvotedIdeas = user.upvotedIdeas.filter(id => !id.equals(new Types.ObjectId(ideaId)));
+    user.upvotedIdeas = user.upvotedIdeas.filter(
+      (id) => !id.equals(new Types.ObjectId(ideaId)),
+    );
   } else {
     idea.upvotes++;
     user.upvotedIdeas.push(new Types.ObjectId(ideaId));

@@ -1,10 +1,22 @@
-import { Controller, Get, Post, Body, Put, Param, NotFoundException, Delete, UseGuards, Req } from '@nestjs/common';
-import { IdeasService } from './ideas.service';
-import { CreateIdeaDto } from './dto/create-idea.dto';
-import { Idea } from './schemas/idea.schema';
+import {
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  Put,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+
+import { CreateIdeaDto } from './dto/create-idea.dto';
 import { UpdateIdeaDto } from './dto/update-idea.dto';
-import { ForbiddenException } from '@nestjs/common';
+import { IdeasService } from './ideas.service';
+import { Idea } from './schemas/idea.schema';
 
 @Controller('ideas')
 export class IdeasController {
@@ -12,7 +24,10 @@ export class IdeasController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  async create(@Body() createIdeaDto: CreateIdeaDto, @Req() req): Promise<Idea> {
+  async create(
+    @Body() createIdeaDto: CreateIdeaDto,
+    @Req() req,
+  ): Promise<Idea> {
     const userId = req.user.id;
     return this.ideasService.create(createIdeaDto, userId);
   }
@@ -45,13 +60,18 @@ export class IdeasController {
 
   @Get('all-data-authenticated')
   @UseGuards(AuthGuard('jwt'))
-  async getAllDataAuthenticated(@Req() req): Promise<{ ideas: Idea[], recentlyViewed: Idea[], submittedIdeas: Idea[], upvotedIdeas: Idea[] }> {
+  async getAllDataAuthenticated(@Req() req): Promise<{
+    ideas: Idea[];
+    recentlyViewed: Idea[];
+    submittedIdeas: Idea[];
+    upvotedIdeas: Idea[];
+  }> {
     const userId = req.user.id;
     return this.ideasService.getAllDataAuthenticated(userId);
   }
 
   @Get('all-data-unauthenticated')
-  async getAllDataUnauthenticated(): Promise<{ ideas: Idea[]}> {
+  async getAllDataUnauthenticated(): Promise<{ ideas: Idea[] }> {
     return this.ideasService.getAllDataUnauthenticated();
   }
 
@@ -66,14 +86,21 @@ export class IdeasController {
 
   @Put(':id')
   @UseGuards(AuthGuard('jwt'))
-  async update(@Param('id') id: string, @Body() updateIdeaDto: UpdateIdeaDto, @Req() req): Promise<Idea> {
+  async update(
+    @Param('id') id: string,
+    @Body() updateIdeaDto: UpdateIdeaDto,
+    @Req() req,
+  ): Promise<Idea> {
     const userId = req.user.id;
     return this.ideasService.update(id, updateIdeaDto, userId);
   }
 
   @Put(':id/toggle-upvote')
   @UseGuards(AuthGuard('jwt'))
-  async toggleUpvote(@Param('id') id: string, @Req() req): Promise<{ idea: Idea; isUpvoted: boolean }> {
+  async toggleUpvote(
+    @Param('id') id: string,
+    @Req() req,
+  ): Promise<{ idea: Idea; isUpvoted: boolean }> {
     try {
       const userId = req.user.id;
       return await this.ideasService.toggleUpvote(id, userId);
@@ -94,7 +121,10 @@ export class IdeasController {
 
   @Delete('recently-viewed/:id')
   @UseGuards(AuthGuard('jwt'))
-  async removeRecentlyViewed(@Param('id') id: string, @Req() req): Promise<void> {
+  async removeRecentlyViewed(
+    @Param('id') id: string,
+    @Req() req,
+  ): Promise<void> {
     const userId = req.user.id;
     return this.ideasService.removeRecentlyViewed(userId, id);
   }
@@ -105,19 +135,27 @@ export class IdeasController {
     @Body('type') type: 'title' | 'description',
     @Body('title') title: string,
     @Body('description') description: string,
-    @Req() req
+    @Req() req,
   ): Promise<{ enhancedText: string }> {
     const userId = req.user.id;
-    const enhancedText = await this.ideasService.enhanceText(type, title, description, userId);
+    const enhancedText = await this.ideasService.enhanceText(
+      type,
+      title,
+      description,
+      userId,
+    );
     return { enhancedText };
   }
 
   @Get(':id/edit')
   @UseGuards(AuthGuard('jwt'))
-  async editIdea(@Param('id') id: string, @Req() req): Promise<{ redirectUrl: string }> {
+  async editIdea(
+    @Param('id') id: string,
+    @Req() req,
+  ): Promise<{ redirectUrl: string }> {
     const userId = req.user.id;
     const canEdit = await this.ideasService.canUserEditIdea(id, userId);
-    
+
     if (canEdit) {
       return { redirectUrl: `${process.env.FRONTEND_URL}/edit-idea/${id}` };
     } else {

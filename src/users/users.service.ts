@@ -1,9 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
+
 import { User } from './schemas/user.schema';
-import { Types } from 'mongoose';
-import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class UsersService {
@@ -11,7 +10,7 @@ export class UsersService {
 
   async getUpvotedIdeas(userId: string): Promise<string[]> {
     const user = await this.userModel.findById(userId);
-    return user?.upvotedIdeas.map(id => id.toString()) || [];
+    return user?.upvotedIdeas.map((id) => id.toString()) || [];
   }
 
   async toggleUpvote(userId: string, ideaId: string) {
@@ -20,14 +19,16 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException(`User with ID "${userId}" not found`);
     }
-  
-    const ideaIndex = user.upvotedIdeas.findIndex(id => id.equals(objectIdIdeaId));
+
+    const ideaIndex = user.upvotedIdeas.findIndex((id) =>
+      id.equals(objectIdIdeaId),
+    );
     if (ideaIndex === -1) {
       user.upvotedIdeas.push(objectIdIdeaId);
     } else {
       user.upvotedIdeas.splice(ideaIndex, 1);
     }
-  
+
     await user.save();
     return user;
   }
@@ -36,12 +37,14 @@ export class UsersService {
     const user = await this.userModel.findById(userId);
     const objectIdIdeaId = new Types.ObjectId(ideaId);
     if (user) {
-      user.upvotedIdeas = user.upvotedIdeas.filter(id => !id.equals(objectIdIdeaId));
+      user.upvotedIdeas = user.upvotedIdeas.filter(
+        (id) => !id.equals(objectIdIdeaId),
+      );
       await user.save();
     }
     return user;
   }
-  
+
   async findUserById(userId: string): Promise<User | null> {
     return this.userModel.findById(userId).exec();
   }
@@ -61,7 +64,7 @@ export class UsersService {
       {
         $addToSet: { viewedIdeas: new Types.ObjectId(ideaId) },
       },
-      { new: true }
+      { new: true },
     );
   }
 

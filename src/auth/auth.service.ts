@@ -1,9 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User } from '../users/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
+import { Model } from 'mongoose';
+
+import { User } from '../users/schemas/user.schema';
 
 @Injectable()
 export class AuthService {
@@ -29,7 +30,7 @@ export class AuthService {
       dbUser = new this.userModel(newUser);
       await dbUser.save();
     }
-    
+
     return this.generateTokens(dbUser);
   }
 
@@ -48,7 +49,9 @@ export class AuthService {
     });
 
     // Remove expired tokens
-    user.refreshTokens = user.refreshTokens.filter(token => token.expires > new Date());
+    user.refreshTokens = user.refreshTokens.filter(
+      (token) => token.expires > new Date(),
+    );
 
     await user.save();
 
@@ -59,12 +62,12 @@ export class AuthService {
     try {
       const decoded = this.jwtService.verify(refreshToken);
       const user = await this.userModel.findById(decoded.sub);
-      
+
       if (!user) throw new UnauthorizedException('User not found');
 
       // Find the refresh token in the user's list
-      const tokenIndex = user.refreshTokens.findIndex(token => 
-        bcrypt.compareSync(refreshToken, token.token)
+      const tokenIndex = user.refreshTokens.findIndex((token) =>
+        bcrypt.compareSync(refreshToken, token.token),
       );
 
       if (tokenIndex === -1) {
@@ -78,7 +81,7 @@ export class AuthService {
       const { accessToken } = await this.generateTokens(user);
 
       return { accessToken };
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
@@ -95,7 +98,7 @@ export class AuthService {
     return this.userModel.findByIdAndUpdate(
       userId,
       { $addToSet: { upvotedIdeas: ideaId } },
-      { new: true }
+      { new: true },
     );
   }
 
@@ -103,7 +106,7 @@ export class AuthService {
     return this.userModel.findByIdAndUpdate(
       userId,
       { $pull: { upvotedIdeas: ideaId } },
-      { new: true }
+      { new: true },
     );
   }
 }

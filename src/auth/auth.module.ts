@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AuthService } from './auth.service';
+import { PassportModule } from '@nestjs/passport';
+import { ThrottlerModule } from '@nestjs/throttler';
+
 import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 import { GoogleStrategy } from './google.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import { User, UserSchema } from '../users/schemas/user.schema';
-import { PassportModule } from '@nestjs/passport';
-import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -17,10 +18,12 @@ import { ThrottlerModule } from '@nestjs/throttler';
       signOptions: { expiresIn: '15m' },
     }),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 10000,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10000,
+      },
+    ]),
   ],
   controllers: [AuthController],
   providers: [AuthService, GoogleStrategy, JwtStrategy],

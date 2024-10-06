@@ -1,13 +1,18 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Idea } from './schemas/idea.schema';
+
 import { CreateIdeaDto } from './dto/create-idea.dto';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UpdateIdeaDto } from './dto/update-idea.dto';
+import { IdeasGateway } from './ideas.gateway';
+import { Idea } from './schemas/idea.schema';
 import { OpenAIService } from '../openai/openai.service';
 import { User } from '../users/schemas/user.schema';
-import { IdeasGateway } from './ideas.gateway';
-import { UpdateIdeaDto } from './dto/update-idea.dto';
 
 @Injectable()
 export class IdeasService {
@@ -16,14 +21,17 @@ export class IdeasService {
     private eventEmitter: EventEmitter2,
     private openAIService: OpenAIService,
     @InjectModel(User.name) private userModel: Model<User>,
-    private ideasGateway: IdeasGateway
+    private ideasGateway: IdeasGateway,
   ) {}
 
   async create(createIdeaDto: CreateIdeaDto, userId?: string): Promise<Idea> {
     let enhancedIdea = createIdeaDto;
 
     if (!createIdeaDto.description && userId) {
-      const { title, description } = await this.openAIService.enhanceIdea(createIdeaDto.title, userId);
+      const { title, description } = await this.openAIService.enhanceIdea(
+        createIdeaDto.title,
+        userId,
+      );
       enhancedIdea = { ...createIdeaDto, title, description };
     }
 
@@ -38,7 +46,7 @@ export class IdeasService {
 
     if (userId) {
       await this.userModel.findByIdAndUpdate(userId, {
-        $addToSet: { upvotedIdeas: savedIdea._id }
+        $addToSet: { upvotedIdeas: savedIdea._id },
       });
     }
 
@@ -52,14 +60,17 @@ export class IdeasService {
   async findAllAuthenticated(userId: string): Promise<Idea[]> {
     const ideas = await this.ideaModel.find().exec();
     const user = await this.userModel.findById(userId);
-    
-    return ideas.map(idea => ({
+
+    return ideas.map((idea) => ({
       ...idea.toObject(),
-      isUpvoted: user.upvotedIdeas.includes(idea._id)
+      isUpvoted: user.upvotedIdeas.includes(idea._id),
     }));
   }
 
-  async toggleUpvote(ideaId: string, userId: string): Promise<{ idea: Idea; isUpvoted: boolean }> {
+  async toggleUpvote(
+    ideaId: string,
+    userId: string,
+  ): Promise<{ idea: Idea; isUpvoted: boolean }> {
     const idea = await this.ideaModel.findById(ideaId);
     if (!idea) {
       throw new NotFoundException(`Idea with ID "${ideaId}" not found`);
@@ -71,10 +82,12 @@ export class IdeasService {
     }
 
     const isUpvoted = user.upvotedIdeas.includes(new Types.ObjectId(ideaId));
-    
+
     if (isUpvoted) {
       idea.upvotes--;
-      user.upvotedIdeas = user.upvotedIdeas.filter(id => !id.equals(new Types.ObjectId(ideaId)));
+      user.upvotedIdeas = user.upvotedIdeas.filter(
+        (id) => !id.equals(new Types.ObjectId(ideaId)),
+      );
     } else {
       idea.upvotes++;
       user.upvotedIdeas.push(new Types.ObjectId(ideaId));
@@ -108,16 +121,19 @@ export class IdeasService {
       {
         $addToSet: { viewedIdeas: ideaId },
       },
-      { new: true }
+      { new: true },
     );
   }
 
   async getViewedIdeas(userId: string): Promise<Idea[]> {
     const user = await this.userModel.findById(userId).exec();
-    return this.ideaModel.find({ _id: { $in: user.viewedIdeas } }).limit(50).exec();
+    return this.ideaModel
+      .find({ _id: { $in: user.viewedIdeas } })
+      .limit(50)
+      .exec();
   }
 
-  async getAllDataUnauthenticated(): Promise<{ ideas: Idea[]}> {
+  async getAllDataUnauthenticated(): Promise<{ ideas: Idea[] }> {
     const ideas = await this.findAll();
 
     return {
@@ -125,30 +141,42 @@ export class IdeasService {
     };
   }
 
-  async getAllDataAuthenticated(userId: string): Promise<{ ideas: Idea[], recentlyViewed: Idea[], submittedIdeas: Idea[], upvotedIdeas: Idea[] }> {
+  async getAllDataAuthenticated(userId: string): Promise<{
+    ideas: Idea[];
+    recentlyViewed: Idea[];
+    submittedIdeas: Idea[];
+    upvotedIdeas: Idea[];
+  }> {
     const user = await this.userModel.findById(userId).exec();
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const [ideas, recentlyViewed, submittedIdeas, upvotedIdeas] = await Promise.all([
-      this.findAllAuthenticated(userId),
-      this.getViewedIdeas(userId),
-      this.ideaModel.find({ username: user.email }).sort({ createdAt: -1 }).exec(),
-      this.ideaModel.find({ _id: { $in: user.upvotedIdeas } }).sort({ createdAt: -1 }).exec()
-    ]);
+    const [ideas, recentlyViewed, submittedIdeas, upvotedIdeas] =
+      await Promise.all([
+        this.findAllAuthenticated(userId),
+        this.getViewedIdeas(userId),
+        this.ideaModel
+          .find({ username: user.email })
+          .sort({ createdAt: -1 })
+          .exec(),
+        this.ideaModel
+          .find({ _id: { $in: user.upvotedIdeas } })
+          .sort({ createdAt: -1 })
+          .exec(),
+      ]);
 
     return {
       ideas,
       recentlyViewed,
-      submittedIdeas: submittedIdeas.map(idea => ({
+      submittedIdeas: submittedIdeas.map((idea) => ({
         ...idea.toObject(),
-        isUpvoted: user.upvotedIdeas.includes(idea._id)
+        isUpvoted: user.upvotedIdeas.includes(idea._id),
       })),
-      upvotedIdeas: upvotedIdeas.map(idea => ({
+      upvotedIdeas: upvotedIdeas.map((idea) => ({
         ...idea.toObject(),
-        isUpvoted: true
-      }))
+        isUpvoted: true,
+      })),
     };
   }
 
@@ -158,7 +186,7 @@ export class IdeasService {
       {
         $pull: { viewedIdeas: ideaId },
       },
-      { new: true }
+      { new: true },
     );
   }
 
@@ -174,17 +202,25 @@ export class IdeasService {
     }
 
     if (idea.username !== user.email) {
-      throw new ForbiddenException('You are not authorized to delete this idea');
+      throw new ForbiddenException(
+        'You are not authorized to delete this idea',
+      );
     }
 
     await this.ideaModel.findByIdAndDelete(ideaId);
 
     // Remove the idea from user's upvotedIdeas if it exists
-    user.upvotedIdeas = user.upvotedIdeas.filter(id => !id.equals(new Types.ObjectId(ideaId)));
+    user.upvotedIdeas = user.upvotedIdeas.filter(
+      (id) => !id.equals(new Types.ObjectId(ideaId)),
+    );
     await user.save();
   }
 
-  async update(ideaId: string, updateIdeaDto: UpdateIdeaDto, userId: string): Promise<Idea> {
+  async update(
+    ideaId: string,
+    updateIdeaDto: UpdateIdeaDto,
+    userId: string,
+  ): Promise<Idea> {
     const idea = await this.ideaModel.findById(ideaId);
     if (!idea) {
       throw new NotFoundException(`Idea with ID "${ideaId}" not found`);
@@ -196,13 +232,15 @@ export class IdeasService {
     }
 
     if (idea.username !== user.email) {
-      throw new ForbiddenException('You are not authorized to update this idea');
+      throw new ForbiddenException(
+        'You are not authorized to update this idea',
+      );
     }
 
     const updatedIdea = await this.ideaModel.findByIdAndUpdate(
       ideaId,
       { $set: updateIdeaDto },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedIdea) {
@@ -212,8 +250,18 @@ export class IdeasService {
     return updatedIdea;
   }
 
-  async enhanceText(type: 'title' | 'description', title: string, description: string, userId: string): Promise<string> {
-    const enhancedText = await this.openAIService.enhanceText(type, title, description, userId);
+  async enhanceText(
+    type: 'title' | 'description',
+    title: string,
+    description: string,
+    userId: string,
+  ): Promise<string> {
+    const enhancedText = await this.openAIService.enhanceText(
+      type,
+      title,
+      description,
+      userId,
+    );
     return enhancedText;
   }
 

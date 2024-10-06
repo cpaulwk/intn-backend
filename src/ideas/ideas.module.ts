@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { MongooseModule } from '@nestjs/mongoose';
+
 import { IdeasController } from './ideas.controller';
-import { IdeasService } from './ideas.service';
 import { IdeasGateway } from './ideas.gateway';
+import { IdeasService } from './ideas.service';
 import { Idea, IdeaSchema } from './schemas/idea.schema';
 import { OpenAIService } from '../openai/openai.service';
 import { User, UserSchema } from '../users/schemas/user.schema';
@@ -14,7 +15,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
       { name: Idea.name, schema: IdeaSchema },
       { name: User.name, schema: UserSchema },
     ]),
-    EventEmitterModule.forRoot()
+    EventEmitterModule.forRoot(),
   ],
   controllers: [IdeasController],
   providers: [IdeasService, IdeasGateway, OpenAIService],

@@ -1,18 +1,21 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { JwtModule } from '@nestjs/jwt';
+import { MongooseModule } from '@nestjs/mongoose';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { MongooseModule } from '@nestjs/mongoose';
-import { EventEmitterModule } from '@nestjs/event-emitter';
-import { UsersModule } from './users/users.module';
-import { IdeasModule } from './ideas/ideas.module';
-import { GoogleStrategy } from './auth/google.strategy';
-import { JwtModule } from '@nestjs/jwt';
-import { JwtStrategy } from './auth/jwt.strategy';
 import { AuthModule } from './auth/auth.module';
+import { GoogleStrategy } from './auth/google.strategy';
+import { JwtStrategy } from './auth/jwt.strategy';
+import { IdeasModule } from './ideas/ideas.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb+srv://cpaulwk:ssAtZ3njN8A5xDN@cluster0.ikayy.mongodb.net/intn'),
+    MongooseModule.forRoot(
+      'mongodb+srv://cpaulwk:ssAtZ3njN8A5xDN@cluster0.ikayy.mongodb.net/intn',
+    ),
     EventEmitterModule.forRoot(),
     UsersModule,
     IdeasModule,

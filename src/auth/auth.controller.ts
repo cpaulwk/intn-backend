@@ -1,13 +1,23 @@
-import { Controller, Get, UseGuards, Req, Res, Post, Injectable, UnauthorizedException } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { Response } from 'express';
-import { AuthService } from './auth.service';
+import {
+  Controller,
+  Get,
+  Injectable,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User } from '../users/schemas/user.schema';
-import { CustomGoogleGuard } from './custom-google.guard';
+import { AuthGuard } from '@nestjs/passport';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { Response } from 'express';
+import { Model } from 'mongoose';
+
+import { AuthService } from './auth.service';
+import { CustomGoogleGuard } from './custom-google.guard';
+import { User } from '../users/schemas/user.schema';
 
 @Injectable()
 @UseGuards(ThrottlerGuard)
@@ -16,12 +26,12 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly jwtService: JwtService,
-    @InjectModel(User.name) private userModel: Model<User>
+    @InjectModel(User.name) private userModel: Model<User>,
   ) {}
 
   @Get()
   @UseGuards(AuthGuard('google'))
-  async googleAuth(@Req() req) {
+  async googleAuth() {
     return;
   }
 
@@ -34,20 +44,22 @@ export class AuthController {
         return res.redirect(`${process.env.FRONTEND_URL}`);
       }
 
-      const { accessToken, refreshToken } = await this.authService.googleLogin(req.user);
-      
-      res.cookie('access_token', accessToken, { 
-        httpOnly: true, 
-        secure: process.env.NODE_ENV === 'production', 
+      const { accessToken, refreshToken } = await this.authService.googleLogin(
+        req.user,
+      );
+
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 15 * 60 * 1000 // 15 minutes
+        maxAge: 15 * 60 * 1000, // 15 minutes
       });
 
-      res.cookie('refresh_token', refreshToken, { 
-        httpOnly: true, 
-        secure: process.env.NODE_ENV === 'production', 
+      res.cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
       // Redirect to the frontend without including sensitive data in the URL
@@ -63,9 +75,11 @@ export class AuthController {
     if (req.cookies['access_token']) {
       try {
         const decoded = this.jwtService.verify(req.cookies['access_token']);
-        const user = await this.userModel.findById(decoded.sub).select('-password');
+        const user = await this.userModel
+          .findById(decoded.sub)
+          .select('-password');
         return { isAuthenticated: true, user };
-      } catch (error) {
+      } catch {
         return { isAuthenticated: false, user: null };
       }
     }
@@ -91,13 +105,14 @@ export class AuthController {
     }
 
     try {
-      const { accessToken } = await this.authService.refreshToken(refresh_token);
+      const { accessToken } =
+        await this.authService.refreshToken(refresh_token);
 
       res.cookie('access_token', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 15 * 60 * 1000 // 15 minutes
+        maxAge: 15 * 60 * 1000, // 15 minutes
       });
 
       return { message: 'Tokens refreshed successfully' };

@@ -1,7 +1,12 @@
-import { Injectable, InternalServerErrorException, BadRequestException } from '@nestjs/common';
-import OpenAI from 'openai';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { OpenAI } from 'openai';
+
 import { User } from '../users/schemas/user.schema';
 
 @Injectable()
@@ -22,10 +27,14 @@ export class OpenAIService {
 
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-    const recentSubmissions = user.ideaSubmissions.filter(submission => submission > oneHourAgo);
+    const recentSubmissions = user.ideaSubmissions.filter(
+      (submission) => submission > oneHourAgo,
+    );
 
     if (recentSubmissions.length >= 30) {
-      throw new BadRequestException('You have submitted too many ideas recently. Please try again later.');
+      throw new BadRequestException(
+        'You have submitted too many ideas recently. Please try again later.',
+      );
     }
 
     user.ideaSubmissions.push(now);
@@ -40,7 +49,9 @@ export class OpenAIService {
   private validateInputLength(input: string): void {
     const MAX_LENGTH = 1200; // Adjust as needed
     if (input.length > MAX_LENGTH) {
-      throw new BadRequestException(`Idea exceeds maximum length of ${MAX_LENGTH} characters`);
+      throw new BadRequestException(
+        `Idea exceeds maximum length of ${MAX_LENGTH} characters`,
+      );
     }
   }
 
@@ -55,17 +66,30 @@ export class OpenAIService {
     }
   }
 
-  private validateResponse(content: any): { title: string; description: string } {
-    if (!content.title || typeof content.title !== 'string' || !content.description || typeof content.description !== 'string') {
-      throw new InternalServerErrorException('Invalid response format from OpenAI');
+  private validateResponse(content: any): {
+    title: string;
+    description: string;
+  } {
+    if (
+      !content.title ||
+      typeof content.title !== 'string' ||
+      !content.description ||
+      typeof content.description !== 'string'
+    ) {
+      throw new InternalServerErrorException(
+        'Invalid response format from OpenAI',
+      );
     }
     return {
       title: content.title,
-      description: content.description
+      description: content.description,
     };
   }
 
-  async enhanceIdea(idea: string, userId: string): Promise<{ title: string; description: string }> {
+  async enhanceIdea(
+    idea: string,
+    userId: string,
+  ): Promise<{ title: string; description: string }> {
     try {
       await this.checkThrottle(userId);
 
@@ -81,28 +105,43 @@ export class OpenAIService {
       2. "description": An expanded description describing the main features and the pain points it solves in 2-3 sentences`;
 
       const completion = await this.openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
         max_tokens: 300,
-        response_format: { type: "json_object" },
+        response_format: { type: 'json_object' },
       });
 
-      if (completion.choices && completion.choices[0] && completion.choices[0].message) {
-        const content = JSON.parse(completion.choices[0].message.content || '{}');
+      if (
+        completion.choices &&
+        completion.choices[0] &&
+        completion.choices[0].message
+      ) {
+        const content = JSON.parse(
+          completion.choices[0].message.content || '{}',
+        );
         return this.validateResponse(content);
       } else {
-        throw new InternalServerErrorException('Unexpected response structure from OpenAI');
+        throw new InternalServerErrorException(
+          'Unexpected response structure from OpenAI',
+        );
       }
     } catch (error) {
       console.error('Error in enhanceIdea:', error);
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new InternalServerErrorException('Failed to enhance idea using OpenAI');
+      throw new InternalServerErrorException(
+        'Failed to enhance idea using OpenAI',
+      );
     }
   }
 
-  async enhanceText(type: 'title' | 'description', title: string, description: string, userId: string): Promise<string> {
+  async enhanceText(
+    type: 'title' | 'description',
+    title: string,
+    description: string,
+    userId: string,
+  ): Promise<string> {
     try {
       await this.checkThrottle(userId);
       const sanitizedTitle = this.sanitizeInput(title);
@@ -128,23 +167,31 @@ export class OpenAIService {
       }
 
       const completion = await this.openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
         max_tokens: 300,
-        response_format: { type: "text" },
+        response_format: { type: 'text' },
       });
 
-      if (completion.choices && completion.choices[0] && completion.choices[0].message) {
+      if (
+        completion.choices &&
+        completion.choices[0] &&
+        completion.choices[0].message
+      ) {
         return this.removeQuotes(completion.choices[0].message.content.trim());
       } else {
-        throw new InternalServerErrorException('Unexpected response structure from OpenAI');
+        throw new InternalServerErrorException(
+          'Unexpected response structure from OpenAI',
+        );
       }
     } catch (error) {
       console.error('Error in enhanceText:', error);
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new InternalServerErrorException('Failed to enhance text using OpenAI');
+      throw new InternalServerErrorException(
+        'Failed to enhance text using OpenAI',
+      );
     }
   }
 

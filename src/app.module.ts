@@ -10,12 +10,20 @@ import { GoogleStrategy } from './auth/google.strategy';
 import { JwtStrategy } from './auth/jwt.strategy';
 import { IdeasModule } from './ideas/ideas.module';
 import { UsersModule } from './users/users.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    MongooseModule.forRoot(
-      'mongodb+srv://cpaulwk:ssAtZ3njN8A5xDN@cluster0.ikayy.mongodb.net/intn',
-    ),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get<string>('MONGODB_URI'),
+      }),
+      inject: [ConfigService],
+    }),
     EventEmitterModule.forRoot(),
     UsersModule,
     IdeasModule,

@@ -73,6 +73,8 @@ export class AuthController {
 
   @Get('check')
   async checkAuthStatus(@Req() req) {
+    console.log('req.cookies', req.cookies);
+    console.log('req.cookies[access_token]', req.cookies['access_token']);
     if (req.cookies['access_token']) {
       try {
         const decoded = this.jwtService.verify(req.cookies['access_token']);

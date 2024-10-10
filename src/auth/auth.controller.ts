@@ -41,9 +41,10 @@ export class AuthController {
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
     try {
       if (req.query.error === 'access_denied') {
+        console.log('Access denied');
         return res.redirect(`${process.env.FRONTEND_URL}`);
       }
-
+      console.log('Access granted');
       const { accessToken, refreshToken } = await this.authService.googleLogin(
         req.user,
       );
